@@ -1,0 +1,9 @@
+{% extends "base.html" %}
+{% block title %}Not found — EmberProof{% endblock %}
+{% block body %}
+<section class="empty">
+  <h1>That's not here</h1>
+  <p>The page or record you asked for doesn't exist.</p>
+  <p><a class="btn" href="{{ url_for('index') }}">Back to your properties</a></p>
+</section>
+{% endblock %}

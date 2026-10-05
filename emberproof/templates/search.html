@@ -1,0 +1,31 @@
+{% extends "base.html" %}
+{% block title %}Search — EmberProof{% endblock %}
+{% block body %}
+<h1>Search</h1>
+{% if term %}
+  <p class="muted">{{ results | length }} result{{ '' if results | length == 1 else 's' }} for “{{ term }}”</p>
+  {% if results %}
+    <section class="item-list">
+      {% for it in results %}
+        <article class="item">
+          <div class="item-body">
+            <h3><a href="{{ url_for('item_detail', iid=it.id) }}">{{ it.name }}</a></h3>
+            <p class="muted small">
+              {{ it.property_name }} → {{ it.room_name }} · {{ it.category | cat }} ·
+              {{ it.replacement_value_cents | money }}
+              <span class="src {{ it.value_source }}">{{ 'confirmed' if it.value_source != 'estimate' else 'estimate' }}</span>
+            </p>
+            {% if it.brand or it.model or it.serial %}
+              <p class="muted small">{{ [it.brand, it.model] | select | join(' ') }}{% if it.serial %} · SN {{ it.serial }}{% endif %}</p>
+            {% endif %}
+          </div>
+        </article>
+      {% endfor %}
+    </section>
+  {% else %}
+    <p class="muted">Nothing matches. Try a brand, a serial number, or a room.</p>
+  {% endif %}
+{% else %}
+  <p class="muted">Type something in the box above — a brand, a model, a serial number.</p>
+{% endif %}
+{% endblock %}

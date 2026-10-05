@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}{{ prop.name }} — EmberProof{% endblock %}
+{% block body %}
+<p class="crumbs"><a href="{{ url_for('index') }}">← All properties</a></p>
+
+<header class="prop-head">
+  <div>
+    <h1>{{ prop.name }}</h1>
+    {% if prop.address %}<p class="muted">{{ prop.address }}</p>{% endif %}
+    <p class="muted small">
+      {% if prop.insurer %}Insurer: {{ prop.insurer }}{% endif %}
+      {% if prop.policy_number %} · Policy {{ prop.policy_number }}{% endif %}
+    </p>
+  </div>
+  <div class="actions">
+    <a class="btn primary" href="{{ url_for('report_pdf', pid=prop.id) }}">Download claim PDF</a>
+    <a class="btn" href="{{ url_for('report_html', pid=prop.id) }}" target="_blank">Print view</a>
+    <a class="btn" href="{{ url_for('export_csv', pid=prop.id) }}">CSV</a>
+    <a class="btn" href="{{ url_for('backup_zip', pid=prop.id) }}">Full backup</a>
+  </div>
+</header>
+
+<section class="stats">
+  <div><b>{{ stats.items }}</b><span>items</span></div>
+  <div><b>{{ stats.rooms }}</b><span>rooms</span></div>
+  <div><b>{{ stats.total_cents | money }}</b><span>total replacement value</span></div>
+  <div><b>{{ stats.photos }}</b><span>photographs</span></div>
+</section>
+
+{% if stats.items %}
+<p class="hint">
+  {{ stats.verified_cents | money }} of that total is confirmed by you;
+  {{ stats.estimated_cents | money }} is a category estimate waiting on a receipt.
+</p>
+{% endif %}
+
+<section class="rooms">
+  {% for r in rooms %}
+    <article class="room-card">
+      <header>
+        <a class="room-link" href="{{ url_for('room_detail', rid=r.id) }}"><h3>{{ r.name }}</h3></a>
+        <span class="pill">{{ r.item_count }} items</span>
+      </header>
+      <p class="muted small">
+        {{ r.total_cents | money }} · {{ r.photos }} photo{{ '' if r.photos == 1 else 's' }}
+      </p>
+      {% if r.sample %}
+        <p class="muted small">{{ r.sample | join(', ') }}{% if r.item_count > 4 %} …{% endif %}</p>
+      {% endif %}
+      <div class="row-actions">
+        <a class="btn small" href="{{ url_for('room_detail', rid=r.id) }}">Open &amp; capture</a>
+        <form method="post" action="{{ url_for('delete_room', rid=r.id) }}"
+              data-confirm="Delete “{{ r.name }}” and every item in it?">
+          <button class="btn small danger">Delete</button>
+        </form>
+      </div>
+    </article>
+  {% endfor %}
+</section>
+
+<section class="panel">
+  <h2>Add a room</h2>
+  <form method="post" action="{{ url_for('add_room', pid=prop.id) }}" class="inline-form">
+    <input name="name" placeholder="Basement, Shop, Trailer…" required>
+    <button class="btn">Add room</button>
+  </form>
+</section>
+
+<details class="panel">
+  <summary>Property details</summary>
+  <form method="post" action="{{ url_for('edit_property', pid=prop.id) }}" class="grid-form">
+    <label>Name <input name="name" value="{{ prop.name }}"></label>
+    <label>Address <input name="address" value="{{ prop.address or '' }}"></label>
+    <label>Insurer <input name="insurer" value="{{ prop.insurer or '' }}"></label>
+    <label>Policy number <input name="policy_number" value="{{ prop.policy_number or '' }}"></label>
+    <button class="btn primary">Save</button>
+  </form>
+</details>
+{% endblock %}

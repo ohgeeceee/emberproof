@@ -1,0 +1,112 @@
+{% extends "base.html" %}
+{% block title %}{{ room.name }} — {{ prop.name }}{% endblock %}
+{% block body %}
+<p class="crumbs"><a href="{{ url_for('property_detail', pid=prop.id) }}">← {{ prop.name }}</a></p>
+
+<header class="room-head">
+  <h1>{{ room.name }}</h1>
+  <p class="muted">{{ items | length }} item{{ '' if items | length == 1 else 's' }} documented</p>
+</header>
+
+<section class="panel capture">
+  <h2>Add an item</h2>
+  <form method="post" action="{{ url_for('create_item', rid=room.id) }}"
+        enctype="multipart/form-data" class="capture-form">
+    <label class="photo-drop">
+      <span>Photograph the item</span>
+      <input type="file" name="photos" accept="image/*" capture="environment" multiple>
+      <small>On a phone this opens the camera. Add several shots if it helps.</small>
+      <div class="previews" data-previews></div>
+    </label>
+
+    <label class="wide">What is it?
+      <input name="name" placeholder="65&quot; LG OLED TV" required autocomplete="off">
+    </label>
+
+    <label>Category
+      <select name="category" data-category>
+        {% for key, label in categories %}
+          <option value="{{ key }}" data-default="{{ defaults[key] }}">{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+
+    <label>How many?
+      <input name="quantity" type="number" min="1" value="1" data-qty>
+    </label>
+
+    <label>Replacement value (USD)
+      <input name="replacement_value" inputmode="decimal" placeholder="estimate: $<span data-estimate>75</span>"
+             data-value>
+    </label>
+
+    <label>Brand <input name="brand" placeholder="Optional"></label>
+    <label>Model <input name="model" placeholder="Optional"></label>
+    <label>Serial number <input name="serial" placeholder="Optional"></label>
+    <label>Purchase date <input name="purchase_date" type="date"></label>
+
+    <details class="wide">
+      <summary>More detail (receipt price, description, notes)</summary>
+      <div class="grid-form">
+        <label>Purchase price (USD) <input name="purchase_price" inputmode="decimal" placeholder="What you paid"></label>
+        <label class="wide">Description
+          <textarea name="description" rows="2" placeholder="Condition, distinguishing marks, where it came from"></textarea>
+        </label>
+        <label class="wide">Notes <textarea name="notes" rows="2"></textarea></label>
+      </div>
+    </details>
+
+    <button class="btn primary wide">Save item</button>
+  </form>
+  <p class="hint">Leave the value blank and EmberProof fills in a conservative category
+     estimate, clearly marked as an estimate in the report. Overwrite it and it counts as
+     confirmed.</p>
+</section>
+
+{% if items %}
+  <section class="item-list">
+    {% for it in items %}
+      <article class="item">
+        {% set ph = it.photos[0] if it.photos else None %}
+        <div class="thumb">
+          {% if ph %}
+            <img src="{{ url_for('serve_thumb', name=ph.filename.rsplit('.',1)[0] ~ '.jpg') }}"
+                 alt="{{ it.name }}" loading="lazy">
+          {% else %}
+            <span class="no-photo">no photo</span>
+          {% endif %}
+        </div>
+        <div class="item-body">
+          <h3><a href="{{ url_for('item_detail', iid=it.id) }}">{{ it.name }}</a></h3>
+          <p class="muted small">
+            {{ it.category | cat }} · qty {{ it.quantity }} ·
+            {{ it.replacement_value_cents | money }}
+            <span class="src {{ it.value_source }}">{{ 'confirmed' if it.value_source != 'estimate' else 'estimate' }}</span>
+          </p>
+          {% if it.brand or it.model or it.serial %}
+            <p class="muted small">{{ [it.brand, it.model] | select | join(' ') }}{% if it.serial %} · SN {{ it.serial }}{% endif %}</p>
+          {% endif %}
+          {% if it.photos | length > 1 %}<p class="muted small">{{ it.photos | length }} photos</p>{% endif %}
+        </div>
+        <div class="item-actions">
+          <a class="btn small" href="{{ url_for('item_detail', iid=it.id) }}">Edit</a>
+          <form method="post" action="{{ url_for('delete_item', iid=it.id) }}"
+                data-confirm="Delete “{{ it.name }}”?">
+            <button class="btn small danger">Delete</button>
+          </form>
+        </div>
+      </article>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="empty"><p>Nothing in {{ room.name }} yet. Add the first thing you'd miss.</p></section>
+{% endif %}
+
+<nav class="room-switch">
+  <span class="muted small">Jump to:</span>
+  {% for r in rooms %}
+    <a class="chip {{ 'active' if r.id == room.id else '' }}"
+       href="{{ url_for('room_detail', rid=r.id) }}">{{ r.name }}</a>
+  {% endfor %}
+</nav>
+{% endblock %}

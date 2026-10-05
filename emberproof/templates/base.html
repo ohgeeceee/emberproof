@@ -1,0 +1,36 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="robots" content="noindex">
+  <title>{% block title %}EmberProof{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
+</head>
+<body>
+  <header class="top">
+    <a class="brand" href="{{ url_for('index') }}">
+      <span class="spark" aria-hidden="true"></span> EmberProof
+    </a>
+    <form class="search" action="{{ url_for('search') }}" method="get" role="search">
+      <input type="search" name="q" placeholder="Search everything you own"
+             value="{{ term if term is defined else '' }}" aria-label="Search items">
+    </form>
+  </header>
+
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      <div class="flashes">
+        {% for cat, msg in messages %}<p class="flash {{ cat }}">{{ msg }}</p>{% endfor %}
+      </div>
+    {% endif %}
+  {% endwith %}
+
+  <main>{% block body %}{% endblock %}</main>
+
+  <footer class="foot">
+    <p>EmberProof keeps everything on this machine. No account, no upload, no cloud.</p>
+  </footer>
+  <script src="{{ url_for('static', filename='app.js') }}"></script>
+</body>
+</html>

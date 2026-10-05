@@ -1,0 +1,19 @@
+# EmberProof data — never commit a real inventory
+data/
+*.db
+*.db-wal
+*.db-shm
+exports/
+media/
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+*.egg-info/
+
+# Editor / OS
+.vscode/
+.idea/
+.DS_Store

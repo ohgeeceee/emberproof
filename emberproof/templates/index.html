@@ -1,0 +1,54 @@
+{% extends "base.html" %}
+{% block title %}EmberProof — your homes{% endblock %}
+{% block body %}
+<section class="hero">
+  <h1>Prove what you owned.</h1>
+  <p class="lede">
+    Photograph your home room by room. When a fire, flood or burglary happens,
+    you hand your insurer an itemised, photographed, dated inventory instead of
+    a memory and a guess.
+  </p>
+</section>
+
+{% if properties %}
+  <section class="cards">
+    {% for p in properties %}
+      <a class="card" href="{{ url_for('property_detail', pid=p.id) }}">
+        <h3>{{ p.name }}</h3>
+        {% if p.address %}<p class="muted">{{ p.address }}</p>{% endif %}
+        <p class="stats-line">
+          <b>{{ p.item_count }}</b> items ·
+          <b>{{ p.room_count }}</b> rooms ·
+          <b>{{ p.total_cents | money }}</b> documented
+        </p>
+      </a>
+    {% endfor %}
+  </section>
+{% else %}
+  <section class="empty">
+    <h2>Nothing documented yet</h2>
+    <p>Most people find out what they owned <em>after</em> it burns. Start with one room.</p>
+  </section>
+{% endif %}
+
+<section class="panel">
+  <h2>Add a property</h2>
+  <form method="post" action="{{ url_for('create_property') }}" class="grid-form">
+    <label>Name
+      <input name="name" placeholder="Main house" required>
+    </label>
+    <label>Address
+      <input name="address" placeholder="123 Main St, Butte, MT">
+    </label>
+    <label>Insurer
+      <input name="insurer" placeholder="Optional">
+    </label>
+    <label>Policy number
+      <input name="policy_number" placeholder="Optional">
+    </label>
+    <button class="btn primary">Create</button>
+  </form>
+  <p class="hint">A property comes with Kitchen, Living room, Bedroom, Garage and Office
+     already set up. Rename or delete them freely.</p>
+</section>
+{% endblock %}

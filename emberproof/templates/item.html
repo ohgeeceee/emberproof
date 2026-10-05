@@ -1,0 +1,115 @@
+{% extends "base.html" %}
+{% block title %}{{ item.name }} — EmberProof{% endblock %}
+{% block body %}
+<p class="crumbs">
+  <a href="{{ url_for('property_detail', pid=prop.id) }}">← {{ prop.name }}</a>
+  &nbsp;·&nbsp;
+  <a href="{{ url_for('room_detail', rid=item.room_id) }}">{{ item.room_name }}</a>
+</p>
+
+<h1>{{ item.name }}</h1>
+<p class="muted small">
+  {{ item.category | cat }} ·
+  <span class="src {{ item.value_source }}">{{ 'confirmed value' if item.value_source != 'estimate' else 'estimated value' }}</span>
+</p>
+
+<section class="panel">
+  <h2>Details</h2>
+  <form method="post" action="{{ url_for('edit_item', iid=item.id) }}"
+        enctype="multipart/form-data" class="grid-form">
+    <label class="wide">Name <input name="name" value="{{ item.name }}" required></label>
+    <label>Category
+      <select name="category" data-category>
+        {% for key, label in categories %}
+          <option value="{{ key }}" data-default="{{ defaults[key] }}"
+                  {{ 'selected' if key == item.category else '' }}>{{ label }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <label>Quantity <input name="quantity" type="number" min="1" value="{{ item.quantity }}"></label>
+    <label>Replacement value (USD)
+      <input name="replacement_value" inputmode="decimal"
+             value="{{ '' if item.replacement_value_cents is none else '%.2f' | format(item.replacement_value_cents / 100) }}"
+             placeholder="estimate: $<span data-estimate>75</span>">
+    </label>
+    <label>Purchase price (USD)
+      <input name="purchase_price" inputmode="decimal"
+             value="{{ '' if item.purchase_price_cents is none else '%.2f' | format(item.purchase_price_cents / 100) }}">
+    </label>
+    <label>Brand <input name="brand" value="{{ item.brand or '' }}"></label>
+    <label>Model <input name="model" value="{{ item.model or '' }}"></label>
+    <label>Serial number <input name="serial" value="{{ item.serial or '' }}"></label>
+    <label>Purchase date <input name="purchase_date" type="date" value="{{ item.purchase_date or '' }}"></label>
+    <label class="wide">Description <textarea name="description" rows="3">{{ item.description or '' }}</textarea></label>
+    <label class="wide">Notes <textarea name="notes" rows="2">{{ item.notes or '' }}</textarea></label>
+    <label class="wide">Add more photos
+      <input type="file" name="photos" accept="image/*" capture="environment" multiple>
+    </label>
+    <button class="btn primary">Save changes</button>
+  </form>
+</section>
+
+<section class="panel">
+  <h2>Photographs <span class="muted small">({{ photos | length }})</span></h2>
+  {% if photos %}
+    <div class="photo-grid">
+      {% for ph in photos %}
+        <figure>
+          <a href="{{ url_for('serve_original', name=ph.filename) }}" target="_blank">
+            <img src="{{ url_for('serve_thumb', name=ph.filename.rsplit('.',1)[0] ~ '.jpg') }}"
+                 alt="Photo of {{ item.name }}" loading="lazy">
+          </a>
+          <figcaption class="muted small">
+            {% if ph.width %}{{ ph.width }}×{{ ph.height }}{% endif %}
+            {% if ph.taken_at %} · {{ ph.taken_at }}{% endif %}
+          </figcaption>
+          <form method="post" action="{{ url_for('delete_photo', phid=ph.id) }}"
+                data-confirm="Delete this photo?">
+            <button class="btn small danger">Remove</button>
+          </form>
+        </figure>
+      {% endfor %}
+    </div>
+  {% else %}
+    <p class="muted">No photos yet. A photo is the single most useful thing you can add.</p>
+  {% endif %}
+</section>
+
+<section class="panel">
+  <h2>Receipts &amp; documents</h2>
+  {% if documents %}
+    <ul class="doc-list">
+      {% for d in documents %}
+        <li>
+          <a href="{{ url_for('serve_document', name=d.filename) }}" target="_blank">{{ d.filename }}</a>
+          <span class="muted small">{{ d.kind }}{% if d.bytes %} · {{ (d.bytes / 1024) | round(0) | int }} KB{% endif %}</span>
+          <form method="post" action="{{ url_for('delete_document', did=d.id) }}"
+                data-confirm="Delete this document?">
+            <button class="btn small danger">Remove</button>
+          </form>
+        </li>
+      {% endfor %}
+    </ul>
+  {% else %}
+    <p class="muted">No receipts attached.</p>
+  {% endif %}
+  <form method="post" action="{{ url_for('add_document', iid=item.id) }}"
+        enctype="multipart/form-data" class="inline-form">
+    <select name="kind">
+      <option value="receipt">Receipt</option>
+      <option value="appraisal">Appraisal</option>
+      <option value="warranty">Warranty</option>
+      <option value="manual">Manual</option>
+    </select>
+    <input type="file" name="documents" accept="image/*,application/pdf" multiple>
+    <button class="btn">Attach</button>
+  </form>
+</section>
+
+<section class="danger-zone">
+  <form method="post" action="{{ url_for('delete_item', iid=item.id) }}"
+        data-confirm="Delete “{{ item.name }}” and all its photos?">
+    <button class="btn danger">Delete this item</button>
+  </form>
+</section>
+{% endblock %}
