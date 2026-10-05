@@ -53,4 +53,29 @@
       });
     }
   }
+
+  // Verify screen: count the pending changes so the save bar tells the truth.
+  const verifyForm = document.querySelector('[data-verify-form]');
+  if (verifyForm) {
+    const counter = verifyForm.querySelector('[data-change-count]');
+    const fields = verifyForm.querySelectorAll('input[name^="value_"], input[name^="confirm_"]');
+    const update = () => {
+      let n = 0;
+      verifyForm.querySelectorAll('input[name^="value_"]').forEach((i) => {
+        if (i.value.trim() !== '') n += 1;
+      });
+      verifyForm.querySelectorAll('input[name^="confirm_"]').forEach((c) => {
+        if (c.checked) n += 1;
+      });
+      if (counter) {
+        counter.textContent = n === 0 ? 'No changes yet'
+          : `${n} change${n === 1 ? '' : 's'} ready to save`;
+      }
+    };
+    fields.forEach((f) => {
+      f.addEventListener('input', update);
+      f.addEventListener('change', update);
+    });
+    update();
+  }
 })();

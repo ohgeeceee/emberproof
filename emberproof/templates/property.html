@@ -34,6 +34,20 @@
 </p>
 {% endif %}
 
+{% if stats.estimated_items %}
+  <section class="cta-verify">
+    <div>
+      <h2>{{ stats.estimated_items }} item{{ '' if stats.estimated_items == 1 else 's' }} still carry a guess</h2>
+      <p class="muted small">
+        {{ stats.estimated_cents | money }} of your {{ stats.total_cents | money }} total is a
+        category estimate. Confirming it takes one sitting and is the single most
+        useful thing you can do to this inventory.
+      </p>
+    </div>
+    <a class="btn primary" href="{{ url_for('verify_values', pid=prop.id) }}">Verify these values</a>
+  </section>
+{% endif %}
+
 <section class="rooms">
   {% for r in rooms %}
     <article class="room-card">

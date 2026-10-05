@@ -27,6 +27,9 @@ that afternoon fast and turns the result into a document that holds up.
 - **Automatic estimates** — leave the value blank and it fills in a conservative
   category figure, clearly marked as an *estimate* in the report. Overwrite it
   and it counts as *confirmed*.
+- **Verify values** — one screen showing only the estimated items, biggest first,
+  so you can turn a guess into a defensible number in a single sitting. Type the
+  real figure, or tick *looks right* if the estimate holds.
 - **Claim-ready PDF** — cover summary, per-room item tables with brand/model/serial,
   and a photographic appendix with one image per item.
 - **CSV** — for your own spreadsheet or an adjuster who insists on Excel.

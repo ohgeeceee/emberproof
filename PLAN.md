@@ -4,13 +4,16 @@
 
 The core is built and verified, not sketched. What exists right now:
 
-- Flask + SQLite app, 20 routes, running on `127.0.0.1:8787`
+- Flask + SQLite app, 22 routes, running on `127.0.0.1:8787`
 - Room-by-room capture with phone camera upload and automatic thumbnails
 - Category estimation with explicit `estimate` vs `manual` provenance
+- **Value verification screen (day 4) — built.** Shows only the estimated items,
+  biggest first, with a one-tap "looks right" for estimates that hold and a box
+  for the ones that don't.
 - Claim-ready PDF: cover, per-room tables, photographic appendix (verified 8 pages,
   19 embedded images on a 19-item demo)
 - CSV export, full ZIP backup, cross-property search, receipts per item
-- 3 end-to-end tests passing (capture → PDF → CSV → ZIP → search → delete)
+- 4 end-to-end tests passing (capture → PDF → CSV → ZIP → search → delete → verify)
 
 What does **not** exist yet: the walkthrough is fast but not *fast enough*, the
 report has never been read by an actual adjuster, and nobody outside this machine
@@ -43,12 +46,17 @@ form queue locally (service worker or localStorage) and flush when the network
 returns, so a dropped connection never loses a photo.
 **Done when:** airplane mode mid-capture loses nothing.
 
-### Day 4 — Values that are defensible
+### Day 4 — Values that are defensible ✅ BUILT
 Estimates are the weakest claim in the document. Add a "verify these" screen that
 surfaces only the estimated items, sorted by value, with a one-tap box to type the
 real number. This is the highest-value screen in the product.
 **Done when:** converting a 19-item inventory from estimated to confirmed is a
 single sitting.
+
+> Built as `GET /properties/<id>/verify`. Shows only estimated items, biggest
+> first, with a "looks right" checkbox for estimates that hold and an input for
+> the ones that don't. A progress bar and the dollar figure still at stake make
+> the remaining work obvious. Covered by `test_verify_flow`.
 
 ### Day 5 — The report an adjuster will accept
 Get the PDF in front of one real insurance professional — an adjuster, an agent, or

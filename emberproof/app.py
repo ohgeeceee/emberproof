@@ -103,6 +103,8 @@ def create_app(data_dir: str | None = None) -> Flask:
             "total_cents": total, "verified_cents": verified,
             "estimated_cents": total - verified,
             "photos": len(photos), "categories": counts,
+            "estimated_items": len([i for i in items if i["value_source"] == "estimate"]),
+            "verified_items": len([i for i in items if i["value_source"] != "estimate"]),
         }
 
     def store_upload(file_storage, kind: str) -> dict | None:
@@ -499,6 +501,61 @@ def create_app(data_dir: str | None = None) -> Flask:
         # the dict method rather than the key, which is a silent footgun.
         sections = [{"room": r, "entries": by_room.get(r["id"], [])} for r in rooms]
         return render_template("report.html", prop=prop, sections=sections, stats=stats)
+
+    # ---- value verification -------------------------------------------------
+    @app.get("/properties/<int:pid>/verify")
+    def verify_values(pid):
+        """The highest-value screen in the app.
+
+        Only the estimated items, biggest first, with one box each. The goal is
+        to turn a floor into a number the owner can defend, in one sitting.
+        """
+        prop, rooms, items, photos_by_item, stats = property_bundle(pid)
+        estimated = sorted(
+            [dict(i) for i in items if i["value_source"] == "estimate"],
+            key=lambda x: (x["replacement_value_cents"] or 0), reverse=True)
+        for it in estimated:
+            ph = photos_by_item.get(it["id"]) or []
+            it["thumb"] = (ph[0]["filename"].rsplit(".", 1)[0] + ".jpg") if ph else None
+        return render_template(
+            "verify.html", prop=prop, items=estimated,
+            total_count=stats["items"], verified_count=stats["verified_items"],
+            at_stake=sum((i["replacement_value_cents"] or 0) for i in estimated),
+            stats=stats)
+
+    @app.post("/properties/<int:pid>/verify")
+    def save_verified_values(pid):
+        prop, rooms, items, photos_by_item, stats = property_bundle(pid)
+        estimated = [i for i in items if i["value_source"] == "estimate"]
+        changed = 0
+        now = dbmod.now_iso()
+        for it in estimated:
+            iid = it["id"]
+            raw = (request.form.get(f"value_{iid}") or "").strip()
+            confirmed = request.form.get(f"confirm_{iid}")
+            cents = parse_cents(raw) if raw else None
+            if cents is not None:
+                # A number they typed is theirs, not ours.
+                get_db().execute(
+                    "UPDATE item SET replacement_value_cents=?, value_source='manual',"
+                    " updated_at=? WHERE id=?", (cents, now, iid))
+                changed += 1
+            elif confirmed:
+                # The estimate was right — that is still a confirmation.
+                get_db().execute(
+                    "UPDATE item SET value_source='manual', updated_at=? WHERE id=?",
+                    (now, iid))
+                changed += 1
+        get_db().commit()
+        remaining = len(estimated) - changed
+        if changed:
+            msg = f"Confirmed {changed} value{'s' if changed != 1 else ''}."
+            msg += (f" {remaining} still estimated." if remaining > 0
+                    else " Every value in this property is now confirmed.")
+            flash(msg, "ok")
+        else:
+            flash("Nothing changed — type a value or tick “looks right”.", "warn")
+        return redirect(url_for("verify_values", pid=pid))
 
     @app.errorhandler(404)
     def not_found(_e):

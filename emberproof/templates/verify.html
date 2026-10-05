@@ -1,0 +1,94 @@
+{% extends "base.html" %}
+{% block title %}Verify values — {{ prop.name }}{% endblock %}
+{% block body %}
+<p class="crumbs"><a href="{{ url_for('property_detail', pid=prop.id) }}">← {{ prop.name }}</a></p>
+
+{% if items %}
+  <header class="verify-head">
+    <h1>Verify these values</h1>
+    <p class="lede">
+      {{ items | length }} item{{ '' if items | length == 1 else 's' }} in <b>{{ prop.name }}</b>
+      carry a category estimate — <b>{{ at_stake | money }}</b> of your total is currently a guess.
+      A number you can defend is worth real money in a claim; a guess gets argued down.
+    </p>
+  </header>
+
+  <section class="progress">
+    <div class="progress-bar">
+      <span style="width: {{ (verified_count / total_count * 100) | round(0) if total_count else 0 }}%"></span>
+    </div>
+    <p class="muted small">
+      <b>{{ verified_count }}</b> of <b>{{ total_count }}</b> confirmed ·
+      {{ stats.verified_cents | money }} defensible,
+      {{ stats.estimated_cents | money }} still estimated
+    </p>
+  </section>
+
+  <form method="post" action="{{ url_for('save_verified_values', pid=prop.id) }}"
+        class="verify-form" data-verify-form>
+    <p class="hint">
+      Type what it would actually cost to replace each thing, or tick
+      <b>looks right</b> if the estimate is close enough. Anything you leave alone
+      stays marked as an estimate — that's fine, it just gets less weight.
+    </p>
+
+    {% for it in items %}
+      <article class="vrow">
+        <div class="vthumb">
+          {% if it.thumb %}
+            <img src="{{ url_for('serve_thumb', name=it.thumb) }}" alt="" loading="lazy">
+          {% else %}
+            <span class="no-photo">no photo</span>
+          {% endif %}
+        </div>
+
+        <div class="vmeta">
+          <h3><a href="{{ url_for('item_detail', iid=it.id) }}">{{ it.name }}</a></h3>
+          <p class="muted small">
+            {{ it.room_name }} · {{ it.category | cat }}
+            {% if it.quantity and it.quantity > 1 %} · {{ it.quantity }}×{% endif %}
+          </p>
+          {% if it.brand or it.model or it.serial %}
+            <p class="muted small">
+              {{ [it.brand, it.model] | select | join(' ') }}{% if it.serial %} · SN {{ it.serial }}{% endif %}
+            </p>
+          {% endif %}
+        </div>
+
+        <div class="vvalue">
+          <span class="est-tag">estimate {{ it.replacement_value_cents | money }}</span>
+          <input name="value_{{ it.id }}" inputmode="decimal" autocomplete="off"
+                 placeholder="{{ (it.replacement_value_cents / 100) | round(0) | int }}"
+                 aria-label="Replacement value for {{ it.name }}">
+          {% if it.quantity and it.quantity > 1 %}
+            <small class="muted">total for all {{ it.quantity }}</small>
+          {% endif %}
+        </div>
+
+        <label class="vconfirm">
+          <input type="checkbox" name="confirm_{{ it.id }}" value="1">
+          <span>looks right</span>
+        </label>
+      </article>
+    {% endfor %}
+
+    <div class="save-bar" data-save-bar>
+      <span class="muted small" data-change-count>No changes yet</span>
+      <button class="btn primary">Save confirmations</button>
+    </div>
+  </form>
+
+{% else %}
+  <section class="done-state">
+    <h1>Every value is confirmed</h1>
+    <p class="lede">
+      All {{ total_count }} items in <b>{{ prop.name }}</b> now carry a number you
+      entered or approved. That is the difference between a claim and an argument.
+    </p>
+    <p>
+      <a class="btn primary" href="{{ url_for('report_pdf', pid=prop.id) }}">Download the claim PDF</a>
+      <a class="btn" href="{{ url_for('property_detail', pid=prop.id) }}">Back to {{ prop.name }}</a>
+    </p>
+  </section>
+{% endif %}
+{% endblock %}
