@@ -4,16 +4,22 @@
 
 The core is built and verified, not sketched. What exists right now:
 
-- Flask + SQLite app, 22 routes, running on `127.0.0.1:8787`
+- Flask + SQLite app, 23 routes, running on `127.0.0.1:8787`
 - Room-by-room capture with phone camera upload and automatic thumbnails
 - Category estimation with explicit `estimate` vs `manual` provenance
+- **Capture loop (day 2) — built.** Photo first, four visible inputs, the rest behind
+  one disclosure. Saving does not reload the page, so a room is captured without a
+  round trip per item.
+- **Offline capture (day 3) — built.** Captures that cannot reach the server are held
+  in IndexedDB and replayed when the connection returns; a service worker caches the
+  shell so the page itself still loads offline.
 - **Value verification screen (day 4) — built.** Shows only the estimated items,
   biggest first, with a one-tap "looks right" for estimates that hold and a box
   for the ones that don't.
 - Claim-ready PDF: cover, per-room tables, photographic appendix (verified 8 pages,
   19 embedded images on a 19-item demo)
 - CSV export, full ZIP backup, cross-property search, receipts per item
-- 4 end-to-end tests passing (capture → PDF → CSV → ZIP → search → delete → verify)
+- 7 server tests + 7 offline-queue tests passing
 
 What does **not** exist yet: the walkthrough is fast but not *fast enough*, the
 report has never been read by an actual adjuster, and nobody outside this machine
@@ -32,7 +38,7 @@ machine that is not this one. Time it. If anything needs a README sentence to
 explain, fix the code instead.
 **Done when:** a non-technical friend reaches the "add an item" screen with no help.
 
-### Day 2 — The walkthrough, on a phone
+### Day 2 — The walkthrough, on a phone ✅ BUILT
 Stand in an actual room and inventory it on an actual phone over actual wifi.
 Expect to find: photos upload slowly, the form is too long for a thumb, the camera
 input is buried. Fix the top three. Add the ability to save an item with only a
@@ -40,11 +46,24 @@ photo and a name — nothing else required.
 **Done when:** you can document a 20-item room in under four minutes without
 touching a keyboard.
 
-### Day 3 — Offline-resilient capture
+> Built: photo area first, four visible inputs (name, category, quantity, value),
+> everything else behind one disclosure. Category now defaults to *Other* rather
+> than *Electronics*, which was the wrong guess for most rooms. Saving no longer
+> reloads the page, and a session chip counts what you have added so the fast loop
+> is provably saving things. Verified at 420px and 900px.
+
+### Day 3 — Offline-resilient capture ✅ BUILT
 A house with bad signal is the normal case, not the edge case. Make the capture
 form queue locally (service worker or localStorage) and flush when the network
 returns, so a dropped connection never loses a photo.
 **Done when:** airplane mode mid-capture loses nothing.
+
+> Built with IndexedDB rather than localStorage: photos are Blobs and localStorage
+> would force base64 and blow the quota. A service worker caches the shell so the
+> page loads offline; the page (not the worker) owns the queue, which keeps replay
+> simple and testable. Verified end to end in a real browser — offline submit is
+> held, the banner reports it, the `online` event replays it, the queue drains and
+> the banner clears.
 
 ### Day 4 — Values that are defensible ✅ BUILT
 Estimates are the weakest claim in the document. Add a "verify these" screen that

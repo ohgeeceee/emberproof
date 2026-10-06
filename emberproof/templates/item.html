@@ -30,7 +30,7 @@
     <label>Replacement value (USD)
       <input name="replacement_value" inputmode="decimal"
              value="{{ '' if item.replacement_value_cents is none else '%.2f' | format(item.replacement_value_cents / 100) }}"
-             placeholder="estimate: $<span data-estimate>75</span>">
+             placeholder="Leave blank to use the estimate">
     </label>
     <label>Purchase price (USD)
       <input name="purchase_price" inputmode="decimal"

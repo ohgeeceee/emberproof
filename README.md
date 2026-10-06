@@ -27,6 +27,11 @@ that afternoon fast and turns the result into a document that holds up.
 - **Automatic estimates** — leave the value blank and it fills in a conservative
   category figure, clearly marked as an *estimate* in the report. Overwrite it
   and it counts as *confirmed*.
+- **Fast capture loop** — saving an item does not reload the page, so a twenty-item
+  room is twenty quick saves rather than twenty round trips through a full render.
+- **Works without a signal** — if the network is down (or you are in a basement),
+  the capture is held on the device and uploaded when the connection returns. A
+  dropped connection never costs you a photo.
 - **Verify values** — one screen showing only the estimated items, biggest first,
   so you can turn a guess into a defensible number in a single sitting. Type the
   real figure, or tick *looks right* if the estimate holds.
@@ -80,13 +85,21 @@ the report never blurs the two.
 ## Testing
 
 ```bash
-.venv/bin/python -m unittest discover -s tests -v
+.venv/bin/python -m unittest discover -s tests -v   # server: 7 tests
+node tests/outbox.test.mjs                          # offline queue: 7 tests
 ```
 
-Covers the full flow: create a property, capture an item with a real JPEG, assert
-the estimate is applied, assert a manual value overrides it, generate the PDF and
-check it is genuinely a PDF, export CSV, build the archive, search, and delete
-(including cleaning the file off disk).
+The Python suite covers the full flow: create a property, capture an item with a
+real JPEG, assert the estimate is applied, assert a manual value overrides it,
+generate the PDF and check it is genuinely a PDF, export CSV, build the archive,
+search, delete (including cleaning the file off disk), the value-verification
+screen, the service worker's root scope, a replayed offline capture, and a sweep
+asserting no HTML markup leaked into any `placeholder` attribute.
+
+The Node suite loads the **shipped** `outbox.js` verbatim into a sandbox with an
+in-memory IndexedDB and exercises the queue: ordering, photo round-tripping,
+draining on success, holding everything when the network is down, keeping a
+capture the server rejects, and resuming from a partial flush.
 
 ## Limits, stated plainly
 

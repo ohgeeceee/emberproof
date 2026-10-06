@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import shutil
 import sys
 import tempfile
@@ -202,6 +203,82 @@ class EmberProofSmoke(unittest.TestCase):
         r = self.client.get(f"/properties/{pid}/report.pdf")
         self.assertEqual(r.status_code, 200)
         self.assertTrue(r.data.startswith(b"%PDF-"))
+
+    def test_service_worker_is_served_for_root_scope(self):
+        r = self.client.get("/sw.js")
+        self.assertEqual(r.status_code, 200)
+        self.assertIn("javascript", r.headers["Content-Type"])
+        self.assertEqual(r.headers.get("Service-Worker-Allowed"), "/",
+                         "the SW must be allowed to control the whole app")
+        self.assertIn(b"emberproof", r.data.lower())
+
+    def test_replayed_capture_creates_an_item(self):
+        """The outbox replays a bare multipart POST to the same endpoint, so the
+        endpoint must work with no page context and no session at all."""
+        self.client.post("/properties", data={"name": "Replay House"}, follow_redirects=True)
+        with self.app.app_context():
+            from emberproof.db import connect
+            conn = connect(self.app.config["DB_PATH"])
+            rid = conn.execute("SELECT id FROM room ORDER BY sort LIMIT 1").fetchone()["id"]
+            conn.close()
+
+        # Exactly what outbox.toFormData builds: text fields plus one photo part.
+        r = self.client.post(f"/rooms/{rid}/items", data={
+            "name": "Queued flashlight", "category": "tools", "quantity": "2",
+            "replacement_value": "",
+            "photos": (io.BytesIO(_jpeg_bytes()), "held.jpg"),
+        }, content_type="multipart/form-data")
+        self.assertEqual(r.status_code, 302)
+
+        with self.app.app_context():
+            from emberproof.db import connect
+            conn = connect(self.app.config["DB_PATH"])
+            item = conn.execute("SELECT * FROM item WHERE name='Queued flashlight'").fetchone()
+            self.assertIsNotNone(item, "a replayed capture must land")
+            self.assertEqual(item["quantity"], 2)
+            self.assertEqual(item["value_source"], "estimate")
+            self.assertEqual(item["replacement_value_cents"], 24000)  # tools $120 x 2
+            photos = conn.execute("SELECT COUNT(*) AS c FROM photo WHERE item_id=?",
+                                  (item["id"],)).fetchone()["c"]
+            self.assertEqual(photos, 1, "the queued photo must be stored")
+            conn.close()
+
+    def test_no_markup_leaks_into_a_placeholder(self):
+        """HTML is never rendered inside an attribute, so any tag in a placeholder
+        prints literally to the user. The estimate used to be a <span> in there,
+        which silently broke the live preview too."""
+        self.client.post("/properties", data={"name": "Placeholder House"},
+                         follow_redirects=True)
+        with self.app.app_context():
+            from emberproof.db import connect
+            conn = connect(self.app.config["DB_PATH"])
+            pid = conn.execute("SELECT id FROM property LIMIT 1").fetchone()["id"]
+            rid = conn.execute("SELECT id FROM room ORDER BY sort LIMIT 1").fetchone()["id"]
+            conn.close()
+        self.client.post(f"/rooms/{rid}/items",
+                         data={"name": "A thing", "category": "other", "quantity": "1"},
+                         follow_redirects=True)
+        with self.app.app_context():
+            from emberproof.db import connect
+            conn = connect(self.app.config["DB_PATH"])
+            iid = conn.execute("SELECT id FROM item LIMIT 1").fetchone()["id"]
+            conn.close()
+
+        pages = [f"/rooms/{rid}", f"/items/{iid}", f"/properties/{pid}",
+                 f"/properties/{pid}/verify", "/"]
+        checked = 0
+        for path in pages:
+            body = self.client.get(path).data.decode()
+            for value in re.findall(r'placeholder="([^"]*)"', body):
+                self.assertNotIn("<", value,
+                                 f"markup leaked into a placeholder on {path}: {value!r}")
+                checked += 1
+        self.assertGreater(checked, 0, "expected to find placeholder attributes to check")
+
+        # and the estimate the script updates must be a real element
+        body = self.client.get(f"/rooms/{rid}").data.decode()
+        self.assertIn("data-estimate", body)
+        self.assertNotIn('placeholder="leave blank to estimate: $<span', body)
 
     def test_report_without_items_is_refused(self):
         self.client.post("/properties", data={"name": "Empty"}, follow_redirects=True)

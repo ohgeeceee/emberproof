@@ -4,8 +4,17 @@
 <p class="crumbs"><a href="{{ url_for('property_detail', pid=prop.id) }}">← {{ prop.name }}</a></p>
 
 <header class="room-head">
-  <h1>{{ room.name }}</h1>
-  <p class="muted">{{ items | length }} item{{ '' if items | length == 1 else 's' }} documented</p>
+  <div>
+    <h1>{{ room.name }}</h1>
+    <p class="muted">
+      <b data-item-count>{{ items | length }}</b>
+      item{{ '' if items | length == 1 else 's' }} documented
+    </p>
+  </div>
+  <p class="session-chip" data-session-count hidden>
+    <b data-n>0</b> added this session ·
+    <a href="">refresh list</a>
+  </p>
 </header>
 
 <section class="panel capture">
@@ -20,13 +29,15 @@
     </label>
 
     <label class="wide">What is it?
-      <input name="name" placeholder="65&quot; LG OLED TV" required autocomplete="off">
+      <input name="name" placeholder="65&quot; LG OLED TV" required autocomplete="off"
+             enterkeyhint="done">
     </label>
 
     <label>Category
       <select name="category" data-category>
         {% for key, label in categories %}
-          <option value="{{ key }}" data-default="{{ defaults[key] }}">{{ label }}</option>
+          <option value="{{ key }}" data-default="{{ defaults[key] }}"
+                  {{ 'selected' if key == 'other' else '' }}>{{ label }}</option>
         {% endfor %}
       </select>
     </label>
@@ -35,19 +46,19 @@
       <input name="quantity" type="number" min="1" value="1" data-qty>
     </label>
 
-    <label>Replacement value (USD)
-      <input name="replacement_value" inputmode="decimal" placeholder="estimate: $<span data-estimate>75</span>"
-             data-value>
+    <label class="wide">Replacement value (USD)
+      <input name="replacement_value" inputmode="decimal"
+             placeholder="Leave blank to use the estimate" data-value>
+      <small class="field-hint">Blank saves the category estimate: <b data-estimate>75</b></small>
     </label>
 
-    <label>Brand <input name="brand" placeholder="Optional"></label>
-    <label>Model <input name="model" placeholder="Optional"></label>
-    <label>Serial number <input name="serial" placeholder="Optional"></label>
-    <label>Purchase date <input name="purchase_date" type="date"></label>
-
     <details class="wide">
-      <summary>More detail (receipt price, description, notes)</summary>
+      <summary>Brand, model, serial, receipt, notes</summary>
       <div class="grid-form">
+        <label>Brand <input name="brand" placeholder="Optional"></label>
+        <label>Model <input name="model" placeholder="Optional"></label>
+        <label>Serial number <input name="serial" placeholder="Optional"></label>
+        <label>Purchase date <input name="purchase_date" type="date"></label>
         <label>Purchase price (USD) <input name="purchase_price" inputmode="decimal" placeholder="What you paid"></label>
         <label class="wide">Description
           <textarea name="description" rows="2" placeholder="Condition, distinguishing marks, where it came from"></textarea>
@@ -56,11 +67,11 @@
       </div>
     </details>
 
-    <button class="btn primary wide">Save item</button>
+    <button class="btn primary wide" type="submit">Save &amp; add another</button>
   </form>
-  <p class="hint">Leave the value blank and EmberProof fills in a conservative category
-     estimate, clearly marked as an estimate in the report. Overwrite it and it counts as
-     confirmed.</p>
+  <p class="hint">Name and a photo are enough. Leave the value blank and EmberProof fills in a
+     conservative category estimate, clearly marked as an estimate in the report — overwrite it
+     and it counts as confirmed.</p>
 </section>
 
 {% if items %}

@@ -4,10 +4,13 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <meta name="robots" content="noindex">
+  <meta name="theme-color" content="#b3401f">
   <title>{% block title %}EmberProof{% endblock %}</title>
   <link rel="stylesheet" href="{{ url_for('static', filename='app.css') }}">
 </head>
 <body>
+  <div class="outbox-banner" data-outbox-banner hidden role="status"></div>
+
   <header class="top">
     <a class="brand" href="{{ url_for('index') }}">
       <span class="spark" aria-hidden="true"></span> EmberProof
@@ -31,6 +34,7 @@
   <footer class="foot">
     <p>EmberProof keeps everything on this machine. No account, no upload, no cloud.</p>
   </footer>
+  <script src="{{ url_for('static', filename='outbox.js') }}"></script>
   <script src="{{ url_for('static', filename='app.js') }}"></script>
 </body>
 </html>

@@ -147,6 +147,15 @@ def create_app(data_dir: str | None = None) -> Flask:
         return jsonify({"ok": True, "version": __import__("emberproof").__version__,
                         "data_dir": data_dir})
 
+    @app.get("/sw.js")
+    def service_worker():
+        """Must be served from the root so its scope covers the whole app."""
+        resp = send_from_directory(app.static_folder, "sw.js",
+                                   mimetype="application/javascript")
+        resp.headers["Service-Worker-Allowed"] = "/"
+        resp.headers["Cache-Control"] = "no-cache"
+        return resp
+
     @app.get("/")
     def index():
         props = rows_to_dicts(q("""

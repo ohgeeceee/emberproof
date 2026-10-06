@@ -46,7 +46,7 @@ a { color: var(--ember); }
   width: 12px; height: 12px; border-radius: 50%;
   background: radial-gradient(circle at 35% 35%, #ffb27a, var(--ember) 70%);
 }
-.search { flex: 1 1 12rem; }
+.search { flex: 1 1 12rem; min-width: 0; }  /* min-width:0 lets it shrink instead of overflowing */
 .search input {
   width: 100%; padding: .5rem .7rem; border: 1px solid var(--rule);
   border-radius: 999px; background: var(--paper); font-size: .95rem;
@@ -302,3 +302,38 @@ input:focus, select:focus, textarea:focus {
   border-radius: var(--radius); padding: 1.6rem; margin: 1rem 0;
 }
 .done-state .lede { color: var(--muted); max-width: 38rem; }
+
+/* ---- offline outbox ------------------------------------------------------ */
+.outbox-banner {
+  position: sticky; top: 0; z-index: 25;
+  padding: .55rem 1rem; font-size: .85rem; text-align: center;
+  background: #fdf3dd; color: var(--warn); border-bottom: 1px solid #ecd9a8;
+}
+.outbox-banner[hidden] { display: none; }
+
+.toast {
+  position: fixed; left: 50%; bottom: 1.4rem; transform: translate(-50%, 1.2rem);
+  z-index: 60; max-width: 90vw;
+  padding: .6rem 1rem; border-radius: 999px;
+  background: #1b1b1f; color: #fff; font-size: .88rem;
+  opacity: 0; pointer-events: none; transition: opacity .18s, transform .18s;
+}
+.toast.show { opacity: 1; transform: translate(-50%, 0); }
+.toast[data-tone="warn"] { background: #8a6410; }
+@media print { .toast, .outbox-banner { display: none !important; } }
+
+/* ---- capture session ----------------------------------------------------- */
+.room-head {
+  display: flex; flex-wrap: wrap; gap: .6rem;
+  align-items: baseline; justify-content: space-between;
+}
+.session-chip {
+  margin: 0; font-size: .82rem; color: var(--muted);
+  background: #e6f2ea; border: 1px solid #bfdcc9; color: var(--ok);
+  border-radius: 999px; padding: .2rem .7rem;
+}
+.session-chip[hidden] { display: none; }
+.session-chip a { color: inherit; }
+
+.field-hint { display: block; margin-top: .25rem; font-size: .78rem; color: var(--muted); }
+.field-hint b { color: var(--ink); }
