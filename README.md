@@ -82,6 +82,41 @@ The estimate-versus-confirmed distinction is the point. A number you made up is
 worse than useless in a claim; a number you can defend is worth real money, and
 the report never blurs the two.
 
+## Backup and restore
+
+Download a backup from any property page — **Full backup** produces a single ZIP
+holding a consistent snapshot of the database, every original photo, and a
+manifest.
+
+```bash
+# what is in this backup? (reads it without extracting anything)
+python run.py --inspect ~/Downloads/Gallatin_Canyon_cabin-backup-20261006.zip
+
+# put it back, into a directory of your choosing
+python run.py --restore ~/Downloads/Gallatin_Canyon_cabin-backup-20261006.zip \
+              --data-dir ~/inventory
+```
+
+Restoring refuses to overwrite an existing database unless you pass `--overwrite`.
+Move the old one aside instead of trusting a flag when the data matters.
+
+Two things worth knowing:
+
+- The snapshot is taken with SQLite's `VACUUM INTO`, **not** by copying the
+  database file. The database runs in WAL mode, so recent commits can still live
+  in `emberproof.db-wal`; a plain file copy produced an archive that could not be
+  opened at all. There is a regression test pinning this.
+- Restore refuses absolute paths and `..` in archive members, so a backup file
+  from an untrusted source cannot write outside the data directory.
+
+Proven, not assumed: restoring a backup of a real 18-item inventory into a fresh
+directory reproduced every item row and all 18 photos byte-identically, and the
+restored copy then served its pages and generated the full 8-page report with all
+18 photographs embedded.
+
+**A backup you have never restored is not a backup.** Do this once now, into a
+directory that is not the one holding the original.
+
 ## Testing
 
 ```bash
@@ -109,8 +144,10 @@ capture the server rejects, and resuming from a partial flush.
 - **Not encrypted at rest by default.** The SQLite file and photo directory are plain
   files. Put them on an encrypted volume (LUKS, FileVault, VeraCrypt) — an inventory
   of your home is a burglary shopping list.
-- **HEIC/HEIF** (default iPhone format) is stored but not thumbnailed unless you
-  `pip install pillow-heif`. Convert to JPEG for thumbnails, or install that package.
+- **HEIC/HEIF** — the iPhone default. Install the optional extra
+  (`pip install -r requirements-heic.txt`) to get thumbnails and pictures in the
+  report. Without it those files are still stored byte-for-byte and served back
+  on demand, they just cannot be shown; the capture screen says so.
 - **Estimates are guesses.** The category defaults are conservative and US-centric.
   They exist to give you a floor to edit, not a valuation.
 - **Single user, single machine.** No sync, no multi-user, no conflict resolution.

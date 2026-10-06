@@ -434,7 +434,24 @@ def create_app(data_dir: str | None = None) -> Flask:
 
     @app.get("/media/thumbs/<path:name>")
     def serve_thumb(name):
-        return send_from_directory(os.path.join(media_root, "thumbs"), name)
+        """Serve a thumbnail, falling back to the original.
+
+        A thumbnail may be missing because the format was undecodable (HEIC
+        without pillow-heif) or generation failed. Serving the original beats a
+        broken-image icon in the report's most important column.
+        """
+        thumb_dir = os.path.join(media_root, "thumbs")
+        if os.path.isfile(os.path.join(thumb_dir, name)):
+            return send_from_directory(thumb_dir, name)
+        stem = os.path.splitext(name)[0]
+        originals = os.path.join(media_root, "originals")
+        try:
+            for candidate in os.listdir(originals):
+                if os.path.splitext(candidate)[0] == stem:
+                    return send_from_directory(originals, candidate)
+        except OSError:
+            pass
+        abort(404)
 
     @app.get("/media/originals/<path:name>")
     def serve_original(name):
@@ -569,5 +586,17 @@ def create_app(data_dir: str | None = None) -> Flask:
     @app.errorhandler(404)
     def not_found(_e):
         return render_template("404.html"), 404
+
+    @app.errorhandler(413)
+    def too_large(_e):
+        """A rejected oversized upload must explain itself, not dump a traceback."""
+        limit_mb = app.config["MAX_CONTENT_LENGTH"] // (1024 * 1024)
+        flash(f"That upload was over {limit_mb} MB and was not saved. "
+              "Try fewer or smaller photos.", "warn")
+        return redirect(request.referrer or url_for("index"))
+
+    @app.context_processor
+    def inject_capabilities():
+        return {"heif_supported": media.HEIF_SUPPORTED}
 
     return app

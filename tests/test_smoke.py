@@ -101,7 +101,9 @@ class EmberProofSmoke(unittest.TestCase):
         import zipfile
         z = zipfile.ZipFile(io.BytesIO(r.data))
         self.assertIn("emberproof.db", z.namelist())
-        self.assertTrue(any(n.startswith("originals/") for n in z.namelist()))
+        self.assertTrue(any(n.startswith("media/originals/") for n in z.namelist()),
+                        "photos belong under media/ so a restore lands them where "
+                        "the app actually reads them")
 
         # 9. manual value overrides the estimate and flips the source
         with self.app.app_context():

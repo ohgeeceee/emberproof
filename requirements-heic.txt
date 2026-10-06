@@ -1,0 +1,7 @@
+# Optional extra: decode HEIC/HEIF photos (the iPhone default).
+#
+#   pip install -r requirements-heic.txt
+#
+# Without it, HEIC files are still stored byte-for-byte and served back on
+# demand — they just get no thumbnail and no picture in the PDF report.
+pillow-heif>=0.13

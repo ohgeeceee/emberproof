@@ -293,18 +293,12 @@ def build_csv(path: str, prop: dict, items: list[dict], photos_by_item: dict) ->
 
 
 def build_backup(path: str, db_path: str, media_root: str, manifest: dict) -> str:
-    """Zip the database, every original photo, and a manifest."""
-    os.makedirs(os.path.dirname(os.path.abspath(path)), exist_ok=True)
-    with zipfile.ZipFile(path, "w", zipfile.ZIP_DEFLATED) as z:
-        z.write(db_path, "emberproof.db")
-        import json
-        z.writestr("manifest.json", json.dumps(manifest, indent=2))
-        for sub in ("originals", "thumbs", "documents"):
-            base = os.path.join(media_root, sub)
-            if not os.path.isdir(base):
-                continue
-            for root, _dirs, files in os.walk(base):
-                for f in files:
-                    full = os.path.join(root, f)
-                    z.write(full, os.path.relpath(full, media_root))
-    return path
+    """Zip a consistent database snapshot, every stored file, and a manifest.
+
+    Delegates to backup.build_archive, which snapshots with VACUUM INTO. A plain
+    copy of the .db file would miss anything still sitting in the WAL — the exact
+    failure you cannot afford in a disaster-recovery tool.
+    """
+    from . import backup
+
+    return backup.build_archive(path, db_path, media_root, manifest)

@@ -18,13 +18,30 @@ try:  # Pillow >= 9
 except Exception:  # pragma: no cover
     _EXIF_TAGS = {}
 
+# Optional HEIC/HEIF support. iPhones shoot HEIC by default, so this matters —
+# but it stays optional. Without pillow-heif those files are still stored
+# byte-for-byte and served back untouched; they just get no dimensions and no
+# thumbnail, and the report skips their picture.
+HEIF_SUPPORTED = False
+try:  # pragma: no cover - depends on the install
+    import pillow_heif
+
+    pillow_heif.register_heif_opener()
+    HEIF_SUPPORTED = True
+except Exception:
+    pass
+
 THUMB_MAX = (1600, 1600)
 GRID_MAX = (400, 400)
 
-# Formats Pillow can decode out of the box. Anything else is stored verbatim
-# and simply has no dimensions (HEIC needs pillow-heif, which we do not force
-# on the user — see README).
-DECODABLE = {"JPEG", "PNG", "WEBP", "GIF", "BMP", "TIFF"}
+# Refuse to decode absurd images rather than let a decompression bomb take the
+# machine down. 80 MP is far above any phone camera (a 48 MP phone is ~48 MP).
+MAX_PIXELS = 80_000_000
+Image.MAX_IMAGE_PIXELS = MAX_PIXELS
+
+# Formats Pillow can decode here. Anything else is stored verbatim and simply
+# has no dimensions.
+DECODABLE = {"JPEG", "PNG", "WEBP", "GIF", "BMP", "TIFF", "HEIF", "AVIF"}
 
 
 def sha256_file(path: str) -> str:

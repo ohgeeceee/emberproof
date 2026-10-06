@@ -19,7 +19,13 @@ The core is built and verified, not sketched. What exists right now:
 - Claim-ready PDF: cover, per-room tables, photographic appendix (verified 8 pages,
   19 embedded images on a 19-item demo)
 - CSV export, full ZIP backup, cross-property search, receipts per item
-- 7 server tests + 7 offline-queue tests passing
+- **Hardening (day 6) — built.** Optional HEIC decoding, EXIF orientation applied to
+  thumbnails, decompression-bomb guard, oversized uploads explained rather than
+  tracebacked, thumbnail fallback to the original, verified at 5,000 items.
+- **Backup and restore (day 7) — built.** `--inspect`, `--restore`, `--overwrite`.
+  The snapshot uses `VACUUM INTO`; a plain copy of a WAL-mode database produced an
+  unopenable archive, which is exactly the bug this day exists to find.
+- 25 server tests + 7 offline-queue tests passing
 
 What does **not** exist yet: the walkthrough is fast but not *fast enough*, the
 report has never been read by an actual adjuster, and nobody outside this machine
@@ -83,15 +89,31 @@ a public adjuster. Ask three questions: what's missing, what's untrustworthy, wh
 would make you deny this. Then change the PDF accordingly.
 **Done when:** someone whose job is claims says "this is fine."
 
-### Day 6 — Hardening
+### Day 6 — Hardening ✅ BUILT
 HEIC support (`pillow-heif`), EXIF rotation verified against real iPhone photos,
 oversized uploads handled, corrupt images handled, 5,000-item inventory still fast.
 **Done when:** a 200-photo upload does not fall over.
 
-### Day 7 — Backup and restore, proven
+> Built: optional HEIC decoding via `requirements-heic.txt`, with a capture-screen
+> note when it is absent. EXIF orientation applied to thumbnails while the original
+> keeps its true pixels. A decompression-bomb guard (80 MP) that degrades to "no
+> dimensions" instead of raising. 413 handled with a readable message rather than a
+> traceback. Thumbnails fall back to the original so a missing thumbnail is never a
+> broken image. Verified at 5,000 items across the property, room, verify and search
+> pages.
+
+### Day 7 — Backup and restore, proven ✅ BUILT
 Restore a full ZIP backup into a fresh install and byte-compare the database. Write
 the restore procedure into the README. Backups you have not restored are not backups.
 **Done when:** a restore works and is documented.
+
+> Built as `--inspect` / `--restore` / `--overwrite`. This day found a serious bug:
+> the backup was a plain copy of the live database file, and because the database
+> runs in WAL mode the archive's copy could not even be opened — the schema itself
+> was still in the write-ahead log. Now snapshotted with `VACUUM INTO`. Verified by
+> restoring a real 18-item inventory into a fresh directory: every item row and all
+> 18 photos byte-identical, and the restored copy served its pages and produced the
+> 8-page report with all 18 photos embedded.
 
 ---
 

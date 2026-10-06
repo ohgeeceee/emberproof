@@ -337,3 +337,9 @@ input:focus, select:focus, textarea:focus {
 
 .field-hint { display: block; margin-top: .25rem; font-size: .78rem; color: var(--muted); }
 .field-hint b { color: var(--ink); }
+
+.warn-note { color: var(--warn); }
+.warn-note code {
+  background: #fff; border: 1px solid var(--rule); border-radius: 4px;
+  padding: 0 .25rem; font-size: .72rem;
+}

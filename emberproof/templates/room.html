@@ -25,6 +25,11 @@
       <span>Photograph the item</span>
       <input type="file" name="photos" accept="image/*" capture="environment" multiple>
       <small>On a phone this opens the camera. Add several shots if it helps.</small>
+      {% if not heif_supported %}
+        <small class="warn-note">HEIC photos (the iPhone default) are stored but
+          cannot be shown or put in the report until you run
+          <code>pip install -r requirements-heic.txt</code>.</small>
+      {% endif %}
       <div class="previews" data-previews></div>
     </label>
 
