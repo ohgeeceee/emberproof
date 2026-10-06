@@ -45,6 +45,10 @@ that afternoon fast and turns the result into a document that holds up.
 
 ## Quick start
 
+Want to look before installing? There is a **read-only demo** at
+<https://ohgeec.com/emberproof/demo/> — a snapshot of a sample house you can click
+through, including a downloadable report.
+
 ```bash
 git clone <your-fork> emberproof && cd emberproof
 python3 -m venv .venv && .venv/bin/pip install -r requirements.txt
@@ -138,9 +142,11 @@ capture the server rejects, and resuming from a partial flush.
 
 ## Limits, stated plainly
 
-- **No authentication.** It binds to `127.0.0.1` by default for that reason. If you
-  expose it, put it behind a reverse proxy with auth or on a private network. Do not
-  port-forward it to the open internet.
+- **No authentication by default.** It binds to `127.0.0.1` for that reason. If you
+  expose it, pass `--auth-token auto` (the browser asks for a username — use
+  anything — and your token as the password), or put it behind a reverse proxy with
+  auth. Binding to a non-loopback address without a token generates one for you
+  rather than leaving you open. Do not port-forward it to the open internet.
 - **Not encrypted at rest by default.** The SQLite file and photo directory are plain
   files. Put them on an encrypted volume (LUKS, FileVault, VeraCrypt) — an inventory
   of your home is a burglary shopping list.
@@ -162,6 +168,15 @@ data/
   media/documents/    receipts, appraisals
   exports/            every PDF/CSV/ZIP you have generated, kept as an audit trail
 ```
+
+## More documentation
+
+- `docs/INSTALL-NAS.md` — Synology, Unraid, QNAP and plain Docker, for people who
+  will not open a shell. Also the network-safety checklist before you expose it.
+- `docs/LAUNCH.md` — the post drafts and where to post them. Written for you to
+  edit, not to post verbatim.
+- `ARCHITECTURE.md` — schema, module map, and the reasoning behind the design.
+- `PLAN.md` — the two-week plan this was built against, with what is done marked.
 
 ## Licence
 

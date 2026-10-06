@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import argparse
 import os
+import secrets
 import sys
 
 from emberproof.app import create_app
@@ -36,12 +37,24 @@ def main() -> int:
     ap.add_argument("--host", default="127.0.0.1")
     ap.add_argument("--port", type=int, default=int(os.environ.get("EMBERPROOF_PORT", 8787)))
     ap.add_argument("--demo", action="store_true", help="seed a sample property and exit")
+    ap.add_argument("--export-demo", metavar="OUTDIR",
+                    help="render a read-only static snapshot into OUTDIR and exit")
+    ap.add_argument("--demo-base", default="",
+                    help="root-absolute URL prefix for the snapshot "
+                         "(e.g. /emberproof/demo). Empty means serve from the root.")
     ap.add_argument("--inspect", metavar="ARCHIVE",
                     help="show what a backup archive contains, then exit")
     ap.add_argument("--restore", metavar="ARCHIVE",
                     help="restore a backup archive into --data-dir, then exit")
     ap.add_argument("--overwrite", action="store_true",
                     help="with --restore: replace an existing database")
+    ap.add_argument("--auth-token", metavar="TOKEN",
+                    default=os.environ.get("EMBERPROOF_TOKEN"),
+                    help="require this token to use the app (HTTP Basic; the "
+                         "username is ignored). Use 'auto' to generate one.")
+    ap.add_argument("--no-auth", action="store_true",
+                    help="explicitly disable the token gate. Only sensible on "
+                         "loopback or a network you fully trust.")
     args = ap.parse_args()
 
     if args.inspect:
@@ -83,15 +96,55 @@ def main() -> int:
         print(f"Now run:  python run.py --data-dir {args.data_dir}")
         return 0
 
-    app = create_app(args.data_dir)
-    shown = "127.0.0.1" if args.host in ("127.0.0.1", "localhost") else args.host
+    if args.export_demo:
+        from emberproof.static_export import export_static
+        result = export_static(args.data_dir, args.export_demo, base=args.demo_base)
+        print(f"Exported {result['property']!r} to {result['out_dir']}")
+        print(f"  rooms:    {result['rooms']}")
+        print(f"  items:    {result['items']}")
+        print(f"  base:     {result['base']}")
+        print(f"  pages:    {len(result['pages'])}")
+        for rel in result["pages"]:
+            print(f"    {rel}")
+        if result["skipped"]:
+            print("  skipped:")
+            for path, code in result["skipped"]:
+                print(f"    {path} -> {code}")
+        print("\nPreview it with:  python -m http.server -d "
+              f"{args.export_demo} 8913")
+        return 0
+
+    loopback = args.host in ("127.0.0.1", "localhost", "::1")
+
+    token = args.auth_token
+    if args.no_auth:
+        token = None
+    elif token == "auto":
+        token = secrets.token_urlsafe(24)
+    elif not loopback and not token:
+        # Safe by default. A home inventory is a burglary shopping list, so
+        # reaching it from the network without a token should not be the path of
+        # least resistance.
+        token = secrets.token_urlsafe(24)
+        print("")
+        print("  This is bound to a non-loopback address and no token was set, so")
+        print("  one has been generated for you. The username can be anything.")
+        print("")
+
+    app = create_app(args.data_dir, auth_token=token)
+    shown = "127.0.0.1" if loopback else args.host
     print(f"EmberProof running at http://{shown}:{args.port}")
     print(f"Data directory: {os.path.abspath(args.data_dir)}")
-    if args.host not in ("127.0.0.1", "localhost"):
+    if token:
+        print(f"Access token:   {token}")
+    if not loopback:
         print("")
-        print("  WARNING: bound to a non-loopback address with no authentication.")
-        print("  Anyone who can reach this port can read and delete your inventory.")
-        print("  Put it behind a reverse proxy with auth, or use a private network.")
+        if token:
+            print("  Reachable from the network. A token is required; keep it private.")
+        else:
+            print("  WARNING: reachable from the network with NO authentication")
+            print("  (--no-auth). Anyone who can reach this port can read and")
+            print("  delete your entire inventory.")
     app.run(host=args.host, port=args.port, debug=False)
     return 0
 

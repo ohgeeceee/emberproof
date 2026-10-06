@@ -1,0 +1,18 @@
+services:
+  emberproof:
+    build: .
+    image: emberproof
+    container_name: emberproof
+    # Reachable from other machines on your network. Keep the token on, or drop
+    # this to "127.0.0.1:8787:8787" to make it this-machine-only.
+    ports:
+      - "8787:8787"
+    volumes:
+      # Everything lives here: database, photos, exports. Back up this folder.
+      - ./inventory:/data
+    environment:
+      EMBERPROOF_DATA: /data
+      # Set a token so nobody else on the network can read your inventory.
+      # Replace this with your own long random string.
+      EMBERPROOF_TOKEN: change-me-to-something-long
+    restart: unless-stopped

@@ -7,12 +7,15 @@ and no network. Everything sensitive stays on disk.
 
 from __future__ import annotations
 
+import base64
+import hmac
 import json
 import os
 from datetime import datetime, timezone
 
-from flask import (Flask, abort, flash, g, jsonify, redirect, render_template,
-                   request, send_file, send_from_directory, url_for)
+from flask import (Flask, Response, abort, flash, g, jsonify, redirect,
+                   render_template, request, send_file, send_from_directory,
+                   url_for)
 from werkzeug.utils import secure_filename
 
 from . import db as dbmod
@@ -21,8 +24,9 @@ from . import media, values
 ALLOWED_IMAGE_EXT = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp", ".tif", ".tiff", ".heic", ".heif"}
 
 
-def create_app(data_dir: str | None = None) -> Flask:
+def create_app(data_dir: str | None = None, auth_token: str | None = None) -> Flask:
     data_dir = os.path.abspath(data_dir or os.environ.get("EMBERPROOF_DATA", "./data"))
+    auth_token = auth_token or os.environ.get("EMBERPROOF_TOKEN") or None
     db_path = os.path.join(data_dir, "emberproof.db")
     media_root = os.path.join(data_dir, "media")
     exports_dir = os.path.join(data_dir, "exports")
@@ -37,6 +41,30 @@ def create_app(data_dir: str | None = None) -> Flask:
         MAX_CONTENT_LENGTH=64 * 1024 * 1024,
         DATA_DIR=data_dir, DB_PATH=db_path, MEDIA_ROOT=media_root, EXPORTS_DIR=exports_dir,
     )
+
+    @app.before_request
+    def require_token():
+        """Optional gate. Off by default because the default bind is loopback.
+
+        HTTP Basic is used so it works in any browser with no JavaScript and no
+        login page to build. The username is ignored; the password is the token.
+        Everything is protected, including the static assets and /healthz —
+        /healthz leaks the data directory path.
+        """
+        if not auth_token:
+            return None
+        header = request.headers.get("Authorization", "")
+        supplied = None
+        if header.startswith("Basic "):
+            try:
+                decoded = base64.b64decode(header[6:]).decode("utf-8", "replace")
+                supplied = decoded.split(":", 1)[1] if ":" in decoded else decoded
+            except Exception:
+                supplied = None
+        if supplied is not None and hmac.compare_digest(supplied, auth_token):
+            return None
+        return Response("Authentication required.\n", 401,
+                        {"WWW-Authenticate": 'Basic realm="EmberProof", charset="UTF-8"'})
 
     # ---- plumbing ----------------------------------------------------------
     def get_db():

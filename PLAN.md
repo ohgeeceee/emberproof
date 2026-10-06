@@ -119,55 +119,67 @@ the restore procedure into the README. Backups you have not restored are not bac
 
 ## Week 2 — make it travel
 
-### Day 8 — The landing page
+### Day 8 — The landing page ✅ BUILT
 One page, one GIF of the walkthrough, one command to install. Host it on the
 network site. The GIF is the product; everything else is commentary.
 **Done when:** someone can decide in fifteen seconds whether they want this.
 
-### Day 9 — Deployment paths for people who don't use a terminal
+> Built at <https://ohgeec.com/emberproof/>. Screenshots are real captures of the
+> running app and a page from a genuinely generated report — no mockups. A GIF of
+> the walkthrough is still worth recording; it needs your hands, and it is the one
+> thing on that page a static screenshot cannot replace.
+
+### Day 9 — Deployment paths for people who don't use a terminal ✅ BUILT
 A one-line Docker command, and written steps for a Synology/NAS install. Half the
 people who want this will not open a shell.
 **Done when:** a NAS owner can install it without reading the source.
 
-### Day 10 — Wrong-audience insurance
-Test the "no authentication" assumption out loud. Add an optional
-`--auth-token` flag and a loud warning when binding to a non-loopback address.
+> Built as `docker-compose.yml` plus `docs/INSTALL-NAS.md` covering Synology
+> Container Manager, Unraid, QNAP and plain Docker, with the network-safety
+> checklist at the end.
+
+### Day 10 — Wrong-audience insurance ✅ BUILT
+Test the "no authentication" assumption out loud. Add an optional `--auth-token`
+flag and a loud warning when binding to a non-loopback address.
 **Done when:** nobody can accidentally publish their home inventory to the internet.
 
-### Day 11 — The demo that makes people act
+> Built as `--auth-token` / `--auth-token auto` / `--no-auth`, HTTP Basic with the
+> username ignored. Binding to a non-loopback address with no token now **generates
+> one** and prints it, rather than warning and proceeding. 8 tests cover the gate,
+> including that an unauthenticated write does not land.
+
+### Day 11 — The demo that makes people act ✅ BUILT
 `--demo` already seeds a cabin. Turn it into a hosted, read-only instance people can
 click through without installing, with a real PDF to download at the end. The PDF is
 the conversion event.
 **Done when:** a stranger downloads a sample report and thinks "I should do this."
 
-### Day 12 — Write the thing only you can write
+> Built as `--export-demo`, which renders the real app to a static snapshot at
+> <https://ohgeec.com/emberproof/demo/> — no server, no writes, nothing to abuse.
+> It renders from an **isolated copy of the database containing only the demo
+> property**, because the naive version published the owner's other properties on a
+> public page. A link crawler over the output asserts zero broken links.
+
+### Day 12 — Write the thing only you can write — YOURS
 Not a feature list. The post: what happens in the week after a house fire, what
-insurers actually ask for, and what a documented inventory changed. You are in
-wildfire country and you have a real reason to care. That is the post that travels.
+insurers actually ask for, and what a documented inventory changed.
 **Done when:** it reads like a person, not a launch.
 
-### Day 13 — Launch where the problem already lives
-In order of expected return:
-1. **Your own network first** — Montana neighbors, volunteer fire departments, local
-   realtors and insurance agents. Ten people who will actually use it beats a
-   thousand who upvote it.
-2. **r/selfhosted** and **r/homelab** — they install things for fun and this one has
-   an obvious reason to exist.
-3. **Hacker News** — Show HN, Tuesday or Wednesday morning US time, titled around the
-   problem ("Show HN: A local-first home inventory that produces a claim-ready PDF"),
-   never around the stack.
-4. **r/Insurance**, **r/homeowners**, **r/PersonalFinance** — read the rules first,
-   lead with the free tool, never with the pitch.
-5. **Local news and fire-safe councils** — a tool that helps people document before
-   fire season is a story they already want to run.
+> Drafted in `docs/LAUNCH.md` as a structure with the parts only you can supply
+> marked. The specific moment, the Montana detail, and the reason you cared enough
+> to finish it are yours to write; an agent writing them would be inventing
+> someone's fire.
 
+### Day 13 — Launch where the problem already lives — YOURS
+Post in the order given in `docs/LAUNCH.md`: your own network first, then
+r/selfhosted, then Show HN, then the homeowner and insurance communities, then local
+news.
 **Done when:** it is posted in at least three places where the audience has the
 problem, and you are answering questions rather than refreshing the counter.
 
-### Day 14 — Sit with the feedback, change one thing
+### Day 14 — Sit with the feedback, change one thing — YOURS
 Read every response. Pick the single most repeated complaint and fix that. Ignore
-the feature requests — at this stage they are noise from people who will never run it.
-**Done when:** the most common complaint from week one is gone.
+the feature requests.
 
 ---
 
